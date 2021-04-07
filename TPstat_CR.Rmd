@@ -1,0 +1,131 @@
+---
+title: "TP Statistique"
+author: "Irene Gannaz"
+date: "26 février 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+## il est possible qu'avant d'installer le package TSPpackage vous deviez installer ou ré-installer Rcpp
+#install.packages('Rcpp')
+
+# install.packages('./TSPpackage_1.0.tar.gz',repos=NULL,type='bin') ## pour linux
+# install.packages('./TSPpackage_1.0.zip',repos=NULL,type='bin')    ## pour windows
+## je ne peux pas fournir de package pour mac...
+
+## Appels aux packages, après les avoir installés !
+library(sp)
+library(maps)
+library(microbenchmark)
+library(TSP)
+library(TSPpackage)
+```
+Voici le plan de ce qui sera fait dans le TP.
+
+# 0. Visualisation de chemins
+
+Lecture du fichier des villes :
+
+```{r, echo=TRUE}
+villes <- read.csv('DonneesGPSvilles.csv',header=TRUE,dec='.',sep=';',quote="\"")
+str(villes)
+```
+Représentation des chemins par plus proches voisins et du chemin optimal :
+```{r, echo=TRUE}
+coord <- cbind(villes$longitude,villes$latitude)
+dist <- distanceGPS(coord)
+voisins <- TSPnearest(dist)
+
+pathOpt <- c(1,8,9,4,21,13,7,10,3,17,16,20,6,19,15,18,11,5,22,14,12,2)
+
+par(mfrow=c(1,2),mar=c(1,1,2,1))
+plotTrace(coord[voisins$chemin,], title='Plus proches voisins')
+plotTrace(coord[pathOpt,], title='Chemin optimal')
+```
+
+
+Les longueurs des trajets (à vol d'oiseau) valent respectivement, pour la méthode des plus proches voisins :
+```{r, echo=FALSE}
+voisins$longueur
+```
+et pour la méthode optimale :
+```{r, echo=FALSE}
+calculeLongueur(dist,pathOpt)
+```
+
+Ceci illustre bien l'intérêt d'un algorithme de voyageur de commerce. Nous allons dans la suite étudier les performances de cet algorithme.
+
+
+# 1. Comparaison d'algorithmes
+
+Nombre de sommets fixes et graphes "identiques".
+
+```{r, echo=TRUE}
+      n <- 10
+sommets <- data.frame(x = runif(n), y = runif(n))
+  couts <- distance(sommets)
+```
+
+## 1.1. Longueur des chemins
+
+Comparaison des longueurs de différentes méthodes : 
+
+   * boxplots
+
+   * test entre 'nearest' et 'branch'
+
+   * tests 2 à 2 
+
+
+## 1.2. Temps de calcul
+
+Comparaison des temps à l'aide du package microbenchmark.
+
+Exemple d'application de microbenchmark :
+```{r, echo=TRUE}
+microbenchmark(sqrt(x),x^0.5, times=100, setup={x <- runif(1)})
+```
+
+# 2. Etude e la complexité de l'algorithme Branch and Bound
+
+## 2.1. Comportement par rapport au nombre de sommets : premier modèle
+
+Récupération du temps sur 10 graphes pour différentes valeurs de $n$.
+
+Ajustement du modèle linéaire de $\log(temps)^2$ en fonction de $n$.
+
+Analyse de la validité du modèle : 
+
+  * pertinence des coefficients et du modèle, 
+  
+  * étude des hypothèses sur les résidus.
+
+## 2.2. Comportement par rapport au nombre de sommets : étude du comportement moyen
+
+Récupération du temps moyen.
+
+Ajustement du modèle linéaire de $\log(temps.moy)^2$ en fonction de $n$.
+
+Analyse de la validité du modèle : 
+
+  * pertinence des coefficients et du modèle, 
+  
+  * étude des hypothèses sur les résidus.
+  
+
+## 2.3. Comportement par rapport à la structure du graphe
+
+Lecture du fichier 'DonneesTSP.csv'.
+
+Ajustement du modèle linéaire de $\log(temps.moy)^2$ en fonction de toutes les variables présentes. Modèle sans constante.
+
+Mise en \oe uvre d'une sélection de variables pour ne garder que les variables pertinentes.
+
+Analyse de la validité du modèle : 
+
+  * pertinence des coefficients et du modèle, 
+  
+  * étude des hypothèses sur les résidus.
+
